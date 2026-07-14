@@ -1,0 +1,205 @@
+.reports-filters {
+  position: relative;
+  z-index: 40;
+  overflow: visible;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+  padding: 1.1rem 1.25rem;
+}
+
+.reports-filters .drp {
+  position: relative;
+  z-index: 41;
+  width: 240px;
+  flex: 0 0 auto;
+  margin-right: auto;
+  overflow: visible;
+}
+
+.reports-filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  justify-content: flex-end;
+  align-items: end;
+}
+
+.reports-chip-btn,
+.reports-apply-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border-radius: 8px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.reports-chip-btn {
+  border: 1px solid #e5e7eb;
+  padding: 0.35rem 0.7rem;
+  background: #fff;
+  color: #4b5563;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.reports-apply-btn {
+  border: 0;
+  padding: 0.45rem 0.9rem;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 650;
+  background: linear-gradient(105deg, #e8b84a, #ff6b4a 70%, #e84a7f);
+  box-shadow: 0 2px 8px rgba(255, 107, 74, 0.2);
+}
+
+.reports-apply-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.reports-apply-btn .is-spin {
+  animation: reportsSpin 0.8s linear infinite;
+}
+
+@keyframes reportsSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.reports-range {
+  margin: 0 0 1rem;
+  color: #6b7280;
+  font-size: 0.92rem;
+}
+
+.reports-range strong {
+  color: #1a1a1c;
+}
+
+.reports-kpi {
+  margin-bottom: 1rem;
+}
+
+.reports-pnl {
+  margin-bottom: 1rem;
+  padding: 1.15rem 1.25rem;
+}
+
+.reports-pnl h2,
+.reports-split h2,
+.reports-bills h2 {
+  margin: 0 0 0.9rem;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.2rem;
+}
+
+.reports-pnl-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.reports-pnl-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.85rem 0.95rem;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #fff8f1, #f7f8fb);
+  border: 1px solid #ece7e0;
+}
+
+.reports-pnl-grid span {
+  font-size: 0.78rem;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.reports-pnl-grid strong {
+  font-size: 1.05rem;
+  color: #1a1a1c;
+}
+
+.reports-pnl-grid .is-net {
+  background: #0f1218;
+  border-color: #0f1218;
+}
+
+.reports-pnl-grid .is-net span {
+  color: #b8aea0;
+}
+
+.reports-pnl-grid .is-net strong {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.15rem;
+}
+
+.reports-pnl-grid .is-profit {
+  color: #1fa97a;
+}
+
+.reports-pnl-grid .is-loss {
+  color: #d64545;
+}
+
+.reports-note {
+  margin: 0.85rem 0 0;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.reports-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.reports-split .dash-panel,
+.reports-bills {
+  padding: 1.15rem 1.25rem;
+}
+
+.reports-bills {
+  margin-bottom: 0.5rem;
+}
+
+@media (max-width: 1100px) {
+  .reports-filters {
+    justify-content: flex-start;
+  }
+
+  .reports-filters .drp {
+    margin-right: 0;
+    width: min(240px, 100%);
+  }
+
+  .reports-filter-actions {
+    justify-content: flex-start;
+  }
+
+  .reports-split {
+    grid-template-columns: 1fr;
+  }
+
+  .reports-pnl-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .reports-filters .drp {
+    width: 100%;
+  }
+
+  .reports-pnl-grid {
+    grid-template-columns: 1fr;
+  }
+}

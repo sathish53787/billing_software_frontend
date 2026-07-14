@@ -1,0 +1,228 @@
+.profile-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(8, 10, 14, 0.55);
+  backdrop-filter: blur(4px);
+  animation: profileOverlayIn 0.2s ease both;
+}
+
+.profile-modal {
+  width: min(440px, 100%);
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid #e8eaef;
+  box-shadow: 0 24px 48px rgba(10, 12, 18, 0.28);
+  padding: 1.25rem 1.35rem 1.35rem;
+  animation: profileModalIn 0.25s ease both;
+}
+
+.profile-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.15rem;
+}
+
+.profile-modal-head h2 {
+  margin: 0;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #1a1a1c;
+}
+
+.profile-modal-head p {
+  margin: 0.3rem 0 0;
+  font-size: 0.88rem;
+  color: #6b7280;
+}
+
+.profile-modal-close {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: #f3f4f6;
+  color: #4b5563;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.profile-modal-close:hover {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.profile-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.profile-upload {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 0.15rem 0 0.75rem;
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #fff8f1, #f7f8fb);
+  border: 1px solid #ece7e0;
+}
+
+.profile-upload-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #1a1208;
+  background: linear-gradient(135deg, #e8b84a, #ff6b4a);
+  box-shadow: 0 8px 18px rgba(255, 107, 74, 0.25);
+}
+
+.profile-upload-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-upload-meta {
+  min-width: 0;
+}
+
+.profile-upload-title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #1a1a1c;
+}
+
+.profile-upload-hint {
+  margin: 0.2rem 0 0.65rem;
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+.profile-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.5rem 0.95rem;
+  color: #fff;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: linear-gradient(105deg, #e8b84a, #ff6b4a 70%, #e84a7f);
+  box-shadow: 0 6px 14px rgba(255, 107, 74, 0.28);
+}
+
+.profile-upload-btn:hover {
+  filter: brightness(1.03);
+}
+
+.profile-field-label {
+  margin-top: 0.55rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.profile-modal-form input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid #d9dde5;
+  border-radius: 10px;
+  background: #fafbfc;
+  color: #1a1a1c;
+  font: inherit;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.profile-modal-form input:focus {
+  border-color: #ff6b4a;
+  box-shadow: 0 0 0 3px rgba(255, 107, 74, 0.15);
+  background: #fff;
+}
+
+.profile-field-error {
+  font-size: 0.78rem;
+  color: #d64545;
+  margin-bottom: 0.15rem;
+}
+
+.profile-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  margin-top: 1.15rem;
+}
+
+.profile-btn-secondary,
+.profile-btn-primary {
+  border: 0;
+  border-radius: 10px;
+  padding: 0.7rem 1.15rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.profile-btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.profile-btn-secondary:hover {
+  background: #e5e7eb;
+}
+
+.profile-btn-primary {
+  color: #fff;
+  background: linear-gradient(105deg, #e8b84a, #ff6b4a 70%, #e84a7f);
+  box-shadow: 0 8px 18px rgba(255, 107, 74, 0.28);
+}
+
+.profile-btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+@keyframes profileOverlayIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes profileModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
