@@ -302,6 +302,14 @@
   color: #ff7a6e;
 }
 
+.auth-hint {
+  width: 100%;
+  margin: 0.15rem 0 0.75rem;
+  text-align: left;
+  font-size: 0.75rem;
+  color: #9a9488;
+}
+
 .forgot-link {
   font-size: 0.82rem;
   color: var(--auth-muted);

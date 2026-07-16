@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { FiCamera } from 'react-icons/fi';
 import { toast } from 'react-toastify';
-import { getCompany, saveCompany } from '../../Services/apiService';
+import { getCompany, persistAuth, saveCompany } from '../../Services/apiService';
 import { resolveBankFromUpiId } from '../Billing/upiHelpers';
 import AppShell from '../Layout/AppShell';
 import '../Dashboard/Dashboard.css';
@@ -10,6 +10,7 @@ import './CompanyProfile.css';
 const emptyForm = {
   companyName: '',
   companyPhone: '',
+  access_url: '',
   address: '',
   gstNo: '',
   bankName: '',
@@ -45,6 +46,7 @@ const CompanyProfile = () => {
           setForm({
             companyName: data.company.companyName || '',
             companyPhone: data.company.companyPhone || '',
+            access_url: data.company.access_url || '',
             address: data.company.address || '',
             gstNo: data.company.gstNo || '',
             bankName: data.company.bankName || '',
@@ -87,7 +89,14 @@ const CompanyProfile = () => {
   const onChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => {
-      const next = { ...prev, [name]: value };
+      let nextValue = value;
+      if (name === 'access_url') {
+        nextValue = String(value)
+          .toLowerCase()
+          .replace(/[^a-z0-9-_]/g, '-')
+          .replace(/-+/g, '-');
+      }
+      const next = { ...prev, [name]: nextValue };
 
       if (name === 'upiId') {
         const detectedBank = resolveBankFromUpiId(value);
@@ -137,6 +146,10 @@ const CompanyProfile = () => {
     else if (!/^(\+\d{1,3}[- ]?)?\d{10}$/.test(String(form.companyPhone).replace(/\s/g, ''))) {
       next.companyPhone = 'Enter a valid phone number';
     }
+    if (!form.access_url.trim()) next.access_url = 'Access URL is required';
+    else if (form.access_url.trim().length < 3) {
+      next.access_url = 'Access URL must be at least 3 characters';
+    }
     if (!form.address.trim()) next.address = 'Address is required';
 
     setErrors(next);
@@ -153,6 +166,7 @@ const CompanyProfile = () => {
         {
           companyName: form.companyName.trim(),
           companyPhone: String(form.companyPhone).replace(/\s/g, '').trim(),
+          access_url: form.access_url.trim().toLowerCase(),
           address: form.address.trim(),
           gstNo: form.gstNo.trim().toUpperCase(),
           bankName: form.bankName.trim(),
@@ -174,6 +188,9 @@ const CompanyProfile = () => {
       setLogoFile(null);
       if (data.company?.companyLogo) {
         setLogoPreview(data.company.companyLogo);
+      }
+      if (data.userResponse) {
+        persistAuth(data.userResponse);
       }
       toast.success(data.message || 'Company details saved successfully');
     } catch (error) {
@@ -254,6 +271,20 @@ const CompanyProfile = () => {
                 />
                 {errors.companyPhone ? (
                   <span className="company-error">{errors.companyPhone}</span>
+                ) : null}
+              </div>
+
+              <div className="company-field">
+                <label htmlFor="access_url">Access URL</label>
+                <input
+                  id="access_url"
+                  name="access_url"
+                  value={form.access_url}
+                  onChange={onChange}
+                  placeholder="e.g. twinsday"
+                />
+                {errors.access_url ? (
+                  <span className="company-error">{errors.access_url}</span>
                 ) : null}
               </div>
 

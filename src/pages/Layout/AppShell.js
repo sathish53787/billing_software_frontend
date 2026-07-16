@@ -17,6 +17,7 @@ import {
 import { getCompany } from '../../Services/apiService';
 import { getItem, removeItem } from '../../Services/localService';
 import { RoutePathName } from '../../routes/RoutePathName';
+import { getTenantPath } from '../../Utils/tenant';
 import ProfileModal from '../Profile/ProfileModal';
 import '../Dashboard/Dashboard.css';
 
@@ -50,6 +51,11 @@ const formatToday = () =>
     year: 'numeric',
   });
 
+const pathEndsWith = (pathname, segment) => {
+  const clean = String(pathname || '').replace(/\/+$/, '');
+  return clean === `/${segment}` || clean.endsWith(`/${segment}`);
+};
+
 const AppShell = ({ title, subtitle, children }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -65,13 +71,13 @@ const AppShell = ({ title, subtitle, children }) => {
   const initials = useMemo(() => getInitials(displayName), [displayName]);
 
   const activeNav = useMemo(() => {
-    if (location.pathname === RoutePathName.DASHBOARD) return 'dashboard';
-    if (location.pathname === RoutePathName.FOOD_ITEMS) return 'food';
-    if (location.pathname === RoutePathName.ORDERS) return 'orders';
-    if (location.pathname === RoutePathName.BILLING) return 'billing';
-    if (location.pathname === RoutePathName.EXPENSES) return 'expenses';
-    if (location.pathname === RoutePathName.REPORTS) return 'reports';
-    if (location.pathname === RoutePathName.COMPANY_PROFILE) return 'company-profile';
+    if (pathEndsWith(location.pathname, RoutePathName.DASHBOARD)) return 'dashboard';
+    if (pathEndsWith(location.pathname, RoutePathName.FOOD_ITEMS)) return 'food';
+    if (pathEndsWith(location.pathname, RoutePathName.ORDERS)) return 'orders';
+    if (pathEndsWith(location.pathname, RoutePathName.BILLING)) return 'billing';
+    if (pathEndsWith(location.pathname, RoutePathName.EXPENSES)) return 'expenses';
+    if (pathEndsWith(location.pathname, RoutePathName.REPORTS)) return 'reports';
+    if (pathEndsWith(location.pathname, RoutePathName.COMPANY_PROFILE)) return 'company-profile';
     return '';
   }, [location.pathname]);
 
@@ -108,12 +114,14 @@ const AppShell = ({ title, subtitle, children }) => {
   const handleLogout = () => {
     removeItem('token');
     removeItem('user');
+    removeItem('company');
+    removeItem('access_url');
     navigate(RoutePathName.AUTH, { replace: true });
   };
 
   const onNavClick = (item) => {
     setNavOpen(false);
-    if (item.path) navigate(item.path);
+    if (item.path) navigate(getTenantPath(item.path));
   };
 
   const openMyProfile = () => {
@@ -123,7 +131,7 @@ const AppShell = ({ title, subtitle, children }) => {
 
   const openCompanyProfile = () => {
     setProfileOpen(false);
-    navigate(RoutePathName.COMPANY_PROFILE);
+    navigate(getTenantPath(RoutePathName.COMPANY_PROFILE));
   };
 
   return (
@@ -181,6 +189,23 @@ const AppShell = ({ title, subtitle, children }) => {
         </nav>
 
         <div className="dash-sidebar-foot">
+          <div className="dash-sidebar-user">
+            <span className="dash-sidebar-user-avatar" aria-hidden>
+              {user?.profileImage ? (
+                <img src={user.profileImage} alt="" />
+              ) : (
+                initials
+              )}
+            </span>
+            <div className="dash-sidebar-user-meta">
+              <p className="dash-sidebar-user-name" title={displayName}>
+                {displayName}
+              </p>
+              <p className="dash-sidebar-user-role">
+                {user?.email || 'Logged in'}
+              </p>
+            </div>
+          </div>
           <button type="button" className="dash-logout" onClick={handleLogout}>
             <FiLogOut />
             Sign out

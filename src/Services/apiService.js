@@ -155,9 +155,16 @@ export const deleteExpense = async (id) => {
   return response.data;
 };
 
+export const createCompany = async (payload) => {
+  const response = await axiosApi().post('/company/create', payload);
+  return response.data;
+};
+
 export const logout = async () => {
   removeItem('token');
   removeItem('user');
+  removeItem('company');
+  removeItem('access_url');
   window.location.href = '/auth';
 };
 
@@ -166,4 +173,10 @@ export const persistAuth = (user) => {
     setItem('token', user.accessToken);
   }
   setItem('user', user);
+  if (user?.company?._id) {
+    setItem('company', user.company._id);
+  }
+  if (user?.company?.access_url) {
+    setItem('access_url', user.company.access_url);
+  }
 };

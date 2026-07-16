@@ -20,7 +20,7 @@
 .expense-panel {
   padding: 0.85rem 1rem;
   position: relative;
-  z-index: 20;
+  z-index: 5;
   overflow: visible;
 }
 
@@ -40,7 +40,7 @@
 
 .expense-filters {
   position: relative;
-  z-index: 30;
+  z-index: 5;
   display: flex;
   flex-wrap: wrap;
   align-items: end;

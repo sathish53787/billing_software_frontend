@@ -54,6 +54,8 @@ const emptySummary = {
   collected: 0,
   outstanding: 0,
   avgBill: 0,
+  totalExpenses: 0,
+  expenseCount: 0,
   netProfit: 0,
   netLoss: 0,
   netPosition: 0,
@@ -68,8 +70,10 @@ const Reports = () => {
     summary: emptySummary,
     daily: [],
     categories: [],
+    expenseCategories: [],
     topItems: [],
     bills: [],
+    expenses: [],
   });
 
   const loadReports = useCallback(async (from, to) => {
@@ -87,8 +91,10 @@ const Reports = () => {
         summary: { ...emptySummary, ...(data.report?.summary || {}) },
         daily: data.report?.daily || [],
         categories: data.report?.categories || [],
+        expenseCategories: data.report?.expenseCategories || [],
         topItems: data.report?.topItems || [],
         bills: data.report?.bills || [],
+        expenses: data.report?.expenses || [],
         from_date: data.report?.from_date,
         to_date: data.report?.to_date,
       });
@@ -136,7 +142,7 @@ const Reports = () => {
   return (
     <AppShell
       title="Reports"
-      subtitle="Date-wise revenue, orders, and profit & loss overview"
+      subtitle="Date-wise revenue, expenses, and profit & loss overview"
     >
       <form className="dash-panel reports-filters" onSubmit={onApply}>
         <DateRangePicker
@@ -152,17 +158,6 @@ const Reports = () => {
         <div className="reports-filter-actions">
           <button type="button" className="reports-chip-btn" onClick={setToday}>
             Today
-          </button>
-          <button
-            type="button"
-            className="reports-chip-btn"
-            onClick={() => {
-              const range = currentMonthRange();
-              setFromDate(range.start);
-              setToDate(range.end);
-            }}
-          >
-            This month
           </button>
           <button type="submit" className="reports-apply-btn" disabled={loading}>
             {loading ? <FiRefreshCw className="is-spin" /> : <FiSearch />}
@@ -180,17 +175,29 @@ const Reports = () => {
           <p className="dash-kpi-trend neutral">{summary.billCount} bills</p>
         </article>
         <article className="dash-kpi">
+          <p className="dash-kpi-label">Total Expenses</p>
+          <p className="dash-kpi-value">{formatINR(summary.totalExpenses)}</p>
+          <p className="dash-kpi-trend neutral">{summary.expenseCount} records</p>
+        </article>
+        <article className="dash-kpi">
+          <p className="dash-kpi-label">Net Profit</p>
+          <p className="dash-kpi-value">{formatINR(summary.netProfit)}</p>
+          <p className={`dash-kpi-trend ${summary.netProfit >= 0 ? 'up' : 'down'}`}>
+            Collected − Expenses
+          </p>
+        </article>
+        <article className="dash-kpi">
           <p className="dash-kpi-label">Orders Sold</p>
           <p className="dash-kpi-value">{summary.itemsSold}</p>
           <p className="dash-kpi-trend neutral">Avg {formatINR(summary.avgBill)}</p>
         </article>
         <article className="dash-kpi">
-          <p className="dash-kpi-label">Collected (Profit)</p>
-          <p className="dash-kpi-value">{formatINR(summary.netProfit)}</p>
+          <p className="dash-kpi-label">Collected</p>
+          <p className="dash-kpi-value">{formatINR(summary.collected)}</p>
           <p className="dash-kpi-trend up">{summary.paidBills} paid bills</p>
         </article>
         <article className="dash-kpi">
-          <p className="dash-kpi-label">Outstanding (Loss Risk)</p>
+          <p className="dash-kpi-label">Outstanding</p>
           <p className="dash-kpi-value">{formatINR(summary.netLoss)}</p>
           <p className="dash-kpi-trend down">{summary.pendingBills} pending</p>
         </article>
@@ -216,10 +223,20 @@ const Reports = () => {
             <strong className="is-profit">{formatINR(summary.collected)}</strong>
           </div>
           <div>
+            <span>Total Expenses</span>
+            <strong className="is-loss">{formatINR(summary.totalExpenses)}</strong>
+          </div>
+          <div>
             <span>Outstanding</span>
             <strong className="is-loss">{formatINR(summary.outstanding)}</strong>
           </div>
-          <div className="is-net">
+          <div className="is-net reports-pnl-span">
+            <span>Net Profit</span>
+            <strong className={summary.netProfit >= 0 ? 'is-profit' : 'is-loss'}>
+              {formatINR(summary.netProfit)}
+            </strong>
+          </div>
+          <div className="is-net reports-pnl-span">
             <span>Net Position</span>
             <strong className={summary.netPosition >= 0 ? 'is-profit' : 'is-loss'}>
               {formatINR(summary.netPosition)}
@@ -227,8 +244,8 @@ const Reports = () => {
           </div>
         </div>
         <p className="reports-note">
-          Net profit uses collected (paid) bills. Outstanding pending bills are shown as loss
-          risk. Item cost is not tracked yet.
+          Net profit = collected (paid) bills − expenses. Net position also subtracts
+          outstanding pending bills as loss risk.
         </p>
       </section>
 
@@ -244,9 +261,10 @@ const Reports = () => {
                   <tr>
                     <th>Date</th>
                     <th>Bills</th>
-                    <th>Orders</th>
                     <th>Revenue</th>
                     <th>Collected</th>
+                    <th>Expenses</th>
+                    <th>Net</th>
                     <th>Outstanding</th>
                   </tr>
                 </thead>
@@ -255,9 +273,14 @@ const Reports = () => {
                     <tr key={day.date}>
                       <td>{formatDisplayDate(day.date)}</td>
                       <td>{day.bills}</td>
-                      <td>{day.orders}</td>
                       <td>{formatINR(day.revenue)}</td>
                       <td>{formatINR(day.collected)}</td>
+                      <td>{formatINR(day.expenses)}</td>
+                      <td>
+                        <span className={Number(day.net) >= 0 ? 'is-profit' : 'is-loss'}>
+                          {formatINR(day.net)}
+                        </span>
+                      </td>
                       <td>{formatINR(day.outstanding)}</td>
                     </tr>
                   ))}
@@ -267,6 +290,28 @@ const Reports = () => {
           </div>
         </div>
 
+        <div className="dash-panel">
+          <h2>Expenses by Category</h2>
+          {report.expenseCategories.length === 0 ? (
+            <p className="dash-empty">No expenses in this range.</p>
+          ) : (
+            <ul className="dash-sell-list">
+              {report.expenseCategories.map((item, index) => (
+                <li key={item.name} className="dash-sell-item">
+                  <span className="dash-rank">{index + 1}</span>
+                  <div>
+                    <p className="dash-sell-name">{item.name}</p>
+                    <p className="dash-sell-meta">{item.pct} of expenses</p>
+                  </div>
+                  <p className="dash-sell-amount">{formatINR(item.amount)}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </section>
+
+      <section className="reports-split">
         <div className="dash-panel">
           <h2>Top Items</h2>
           {report.topItems.length === 0 ? (
@@ -285,6 +330,38 @@ const Reports = () => {
               ))}
             </ul>
           )}
+        </div>
+
+        <div className="dash-panel reports-expense-details">
+          <h2>Expense Details</h2>
+          <div className="dash-table-wrap">
+            {report.expenses.length === 0 ? (
+              <p className="dash-empty">No expenses found for selected dates.</p>
+            ) : (
+              <table className="dash-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Category</th>
+                    <th>Description</th>
+                    <th>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {report.expenses.map((expense) => (
+                    <tr key={expense.id}>
+                      <td>{formatDisplayDate(expense.expenseDate)}</td>
+                      <td>
+                        <span className="dash-expense-cat">{expense.category}</span>
+                      </td>
+                      <td>{expense.description || '—'}</td>
+                      <td>{formatINR(expense.amount)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
       </section>
 

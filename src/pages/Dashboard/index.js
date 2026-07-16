@@ -10,6 +10,16 @@ const formatINR = (value) =>
     maximumFractionDigits: 0,
   })}`;
 
+const formatDisplayDate = (value) => {
+  if (!value) return '—';
+  const raw = String(value);
+  if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+    const [year, month, day] = raw.slice(0, 10).split('-');
+    return `${day}-${month}-${year}`;
+  }
+  return raw;
+};
+
 const formatSigned = (value, suffix = '') => {
   const num = Number(value || 0);
   const sign = num > 0 ? '+' : num < 0 ? '' : '';
@@ -33,6 +43,12 @@ const emptyDashboard = {
     ordersChange: 0,
     avgBillValue: 0,
     avgBillChangePct: 0,
+    todayExpenses: 0,
+    expenseChangePct: 0,
+    expenseCount: 0,
+    expenseCountChange: 0,
+    netToday: 0,
+    netChangePct: 0,
   },
   weeklyRevenue: [
     { day: 'Sun', value: 0, amount: 0 },
@@ -52,6 +68,7 @@ const emptyDashboard = {
   donutGradient: '#e5e7eb 0% 100%',
   topItems: [],
   recentBills: [],
+  recentExpenses: [],
 };
 
 const Dashboard = () => {
@@ -82,6 +99,7 @@ const Dashboard = () => {
           categories: data.dashboard?.categories?.length
             ? data.dashboard.categories
             : emptyDashboard.categories,
+          recentExpenses: data.dashboard?.recentExpenses || [],
         });
       } catch (error) {
         if (!active) return;
@@ -99,8 +117,15 @@ const Dashboard = () => {
     };
   }, []);
 
-  const { kpis, weeklyRevenue, categories, donutGradient, topItems, recentBills } =
-    dashboard;
+  const {
+    kpis,
+    weeklyRevenue,
+    categories,
+    donutGradient,
+    topItems,
+    recentBills,
+    recentExpenses,
+  } = dashboard;
 
   return (
     <AppShell
@@ -115,6 +140,24 @@ const Dashboard = () => {
           </p>
           <p className={`dash-kpi-trend ${trendClass(kpis.revenueChangePct)}`}>
             {formatSigned(kpis.revenueChangePct, '%')} vs yesterday
+          </p>
+        </article>
+        <article className="dash-kpi">
+          <p className="dash-kpi-label">Today&apos;s Expenses</p>
+          <p className="dash-kpi-value">
+            {loading ? '—' : formatINR(kpis.todayExpenses)}
+          </p>
+          <p className={`dash-kpi-trend ${trendClass(-kpis.expenseChangePct)}`}>
+            {formatSigned(kpis.expenseChangePct, '%')} vs yesterday
+          </p>
+        </article>
+        <article className="dash-kpi">
+          <p className="dash-kpi-label">Net Today</p>
+          <p className="dash-kpi-value">
+            {loading ? '—' : formatINR(kpis.netToday)}
+          </p>
+          <p className={`dash-kpi-trend ${trendClass(kpis.netChangePct)}`}>
+            {formatSigned(kpis.netChangePct, '%')} vs yesterday
           </p>
         </article>
         <article className="dash-kpi">
@@ -239,6 +282,40 @@ const Dashboard = () => {
                           {bill.status}
                         </span>
                       </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="dash-expenses" aria-label="Recent expenses">
+        <div className="dash-panel">
+          <h2>Recent Expenses</h2>
+          <div className="dash-table-wrap">
+            {recentExpenses.length === 0 ? (
+              <p className="dash-empty">No expense records yet.</p>
+            ) : (
+              <table className="dash-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Category</th>
+                    <th>Description</th>
+                    <th>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentExpenses.map((expense) => (
+                    <tr key={expense.id}>
+                      <td>{formatDisplayDate(expense.expenseDate)}</td>
+                      <td>
+                        <span className="dash-expense-cat">{expense.category}</span>
+                      </td>
+                      <td>{expense.description || '—'}</td>
+                      <td>{formatINR(expense.amount)}</td>
                     </tr>
                   ))}
                 </tbody>

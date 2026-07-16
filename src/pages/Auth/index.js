@@ -4,11 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import {
+  createCompanyStart,
   loginStart,
   registerStart,
   resetAuthState,
 } from '../../Store/Slices/handlers/AuthSlice';
-import { RoutePathName } from '../../routes/RoutePathName';
+import { getDashboardPath } from '../../Utils/tenant';
+import { getItem } from '../../Services/localService';
 import billingHero from '../../assets/images/auth/billing-hero.png';
 import billingSignupHero from '../../assets/images/auth/billing-signup-hero.png';
 import './Auth.css';
@@ -26,19 +28,47 @@ const initialSignIn = {
   password: '',
 };
 
+const initialCompany = {
+  companyName: '',
+  companyPhone: '',
+  access_url: '',
+};
+
 const Auth = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const auth = useSelector((state) => state.auth);
 
   const [isSignUp, setIsSignUp] = useState(false);
+  const [showCompanySetup, setShowCompanySetup] = useState(false);
   const [signUpForm, setSignUpForm] = useState(initialSignUp);
   const [signInForm, setSignInForm] = useState(initialSignIn);
+  const [companyForm, setCompanyForm] = useState(initialCompany);
   const [signUpErrors, setSignUpErrors] = useState({});
   const [signInErrors, setSignInErrors] = useState({});
+  const [companyErrors, setCompanyErrors] = useState({});
   const [showSignUpPassword, setShowSignUpPassword] = useState(false);
   const [showSignUpConfirmPassword, setShowSignUpConfirmPassword] = useState(false);
   const [showSignInPassword, setShowSignInPassword] = useState(false);
+
+  useEffect(() => {
+    const existing = getItem('user');
+    const token = getItem('token');
+    if (token && existing && (existing.is_company || existing.company?.access_url || existing.company)) {
+      if (existing.is_company || existing.company?.access_url) {
+        navigate(getDashboardPath(existing), { replace: true });
+        return;
+      }
+    }
+    if (token && existing && !(existing.is_company || existing.company)) {
+      setShowCompanySetup(true);
+      setIsSignUp(true);
+      setCompanyForm((prev) => ({
+        ...prev,
+        companyPhone: existing.phone || '',
+      }));
+    }
+  }, [navigate]);
 
   useEffect(() => {
     dispatch(resetAuthState());
@@ -51,28 +81,23 @@ const Auth = () => {
   }, [auth.error]);
 
   useEffect(() => {
-    if (auth.message && !auth.user) {
-      toast.success(auth.message);
-      setIsSignUp(false);
-      setSignUpErrors({});
-      setSignInErrors({});
-      setSignUpForm(initialSignUp);
-      setShowSignUpPassword(false);
-      setShowSignUpConfirmPassword(false);
-      setSignInForm({
-        loginId: auth.registeredEmail || '',
-        password: '',
-      });
-      dispatch(resetAuthState());
+    if (auth.needsCompanySetup && auth.user?.accessToken) {
+      toast.success(auth.message || 'Account created successfully');
+      setShowCompanySetup(true);
+      setIsSignUp(true);
+      setCompanyForm((prev) => ({
+        ...prev,
+        companyPhone: auth.user?.phone || signUpForm.phone || '',
+      }));
     }
-  }, [auth.message, auth.user, auth.registeredEmail, dispatch]);
+  }, [auth.needsCompanySetup, auth.user, auth.message, signUpForm.phone]);
 
   useEffect(() => {
-    if (auth.user?.accessToken) {
-      toast.success('Logged in successfully');
-      navigate(RoutePathName.DASHBOARD, { replace: true });
+    if (auth.user?.accessToken && (auth.user?.is_company || auth.user?.company) && !auth.needsCompanySetup) {
+      toast.success(auth.message || 'Logged in successfully');
+      navigate(getDashboardPath(auth.user), { replace: true });
     }
-  }, [auth.user, navigate]);
+  }, [auth.user, auth.needsCompanySetup, auth.message, navigate]);
 
   const onSignUpChange = (e) => {
     const { name, value } = e.target;
@@ -105,6 +130,19 @@ const Auth = () => {
     const { name, value } = e.target;
     setSignInForm((prev) => ({ ...prev, [name]: value }));
     setSignInErrors((prev) => ({ ...prev, [name]: '' }));
+  };
+
+  const onCompanyChange = (e) => {
+    const { name, value } = e.target;
+    let nextValue = value;
+    if (name === 'access_url') {
+      nextValue = String(value)
+        .toLowerCase()
+        .replace(/[^a-z0-9-_]/g, '-')
+        .replace(/-+/g, '-');
+    }
+    setCompanyForm((prev) => ({ ...prev, [name]: nextValue }));
+    setCompanyErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
   const validateSignUp = () => {
@@ -153,6 +191,21 @@ const Auth = () => {
     return Object.keys(errors).length === 0;
   };
 
+  const validateCompany = () => {
+    const errors = {};
+    if (!companyForm.companyName.trim()) errors.companyName = 'Company name is required';
+    if (!companyForm.companyPhone.trim()) errors.companyPhone = 'Company phone number is required';
+    else if (!/^(\+\d{1,3}[- ]?)?\d{10}$/.test(companyForm.companyPhone.replace(/\s/g, ''))) {
+      errors.companyPhone = 'Enter a valid 10-digit phone number';
+    }
+    if (!companyForm.access_url.trim()) errors.access_url = 'Access URL is required';
+    else if (companyForm.access_url.trim().length < 3) {
+      errors.access_url = 'Access URL must be at least 3 characters';
+    }
+    setCompanyErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSignUp = (e) => {
     e.preventDefault();
     if (!validateSignUp()) return;
@@ -179,7 +232,20 @@ const Auth = () => {
     );
   };
 
+  const handleCompanySubmit = (e) => {
+    e.preventDefault();
+    if (!validateCompany()) return;
+    dispatch(
+      createCompanyStart({
+        companyName: companyForm.companyName.trim(),
+        companyPhone: companyForm.companyPhone.replace(/\s/g, '').trim(),
+        access_url: companyForm.access_url.trim().toLowerCase(),
+      })
+    );
+  };
+
   const switchPanel = (showSignUp) => {
+    if (showCompanySetup) return;
     setIsSignUp(showSignUp);
     setSignUpErrors({});
     setSignInErrors({});
@@ -193,80 +259,124 @@ const Auth = () => {
 
   return (
     <div className="auth-page">
-      <div className={`auth-container ${isSignUp ? 'right-panel-active' : ''}`}>
+      <div className={`auth-container ${isSignUp || showCompanySetup ? 'right-panel-active' : ''}`}>
         <div className="auth-form-container auth-sign-up">
-          <form onSubmit={handleSignUp} noValidate>
-            <p className="auth-brand">STV Billing Software</p>
-            <h2 className="auth-action-title">Create Account</h2>
-            <span>Use your email for registration</span>
-            <input
-              type="text"
-              name="fullName"
-              placeholder="Full Name"
-              value={signUpForm.fullName}
-              onChange={onSignUpChange}
-            />
-            {signUpErrors.fullName && <p className="field-error">{signUpErrors.fullName}</p>}
-            <input
-              type="tel"
-              name="phone"
-              placeholder="Phone Number"
-              value={signUpForm.phone}
-              onChange={onSignUpChange}
-            />
-            {signUpErrors.phone && <p className="field-error">{signUpErrors.phone}</p>}
-            <input
-              type="email"
-              name="email"
-              placeholder="Email"
-              value={signUpForm.email}
-              onChange={onSignUpChange}
-            />
-            {signUpErrors.email && <p className="field-error">{signUpErrors.email}</p>}
-            <div className="auth-password-field">
+          {showCompanySetup ? (
+            <form onSubmit={handleCompanySubmit} noValidate>
+              <p className="auth-brand">STV Billing Software</p>
+              <h2 className="auth-action-title">Company Details</h2>
+              <span>Set up your business workspace</span>
               <input
-                type={showSignUpPassword ? 'text' : 'password'}
-                name="password"
-                placeholder="Password"
-                value={signUpForm.password}
+                type="text"
+                name="companyName"
+                placeholder="Company Name"
+                value={companyForm.companyName}
+                onChange={onCompanyChange}
+              />
+              {companyErrors.companyName && (
+                <p className="field-error">{companyErrors.companyName}</p>
+              )}
+              <input
+                type="tel"
+                name="companyPhone"
+                placeholder="Company Phone Number"
+                value={companyForm.companyPhone}
+                onChange={onCompanyChange}
+              />
+              {companyErrors.companyPhone && (
+                <p className="field-error">{companyErrors.companyPhone}</p>
+              )}
+              <input
+                type="text"
+                name="access_url"
+                placeholder="Access URL (e.g. twinsday)"
+                value={companyForm.access_url}
+                onChange={onCompanyChange}
+              />
+              {companyErrors.access_url && (
+                <p className="field-error">{companyErrors.access_url}</p>
+              )}
+              <p className="auth-hint">
+                Your portal will open at /{companyForm.access_url || 'access-url'}/dashboard
+              </p>
+              <button type="submit" className="auth-btn" disabled={auth.loading}>
+                {auth.loading ? 'Please wait...' : 'CONTINUE'}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleSignUp} noValidate>
+              <p className="auth-brand">STV Billing Software</p>
+              <h2 className="auth-action-title">Create Account</h2>
+              <span>Use your email for registration</span>
+              <input
+                type="text"
+                name="fullName"
+                placeholder="Full Name"
+                value={signUpForm.fullName}
                 onChange={onSignUpChange}
               />
-              <button
-                type="button"
-                className="auth-password-toggle"
-                onClick={() => setShowSignUpPassword((prev) => !prev)}
-                aria-label={showSignUpPassword ? 'Hide password' : 'Show password'}
-              >
-                {showSignUpPassword ? <FaEyeSlash /> : <FaEye />}
-              </button>
-            </div>
-            {signUpErrors.password && <p className="field-error">{signUpErrors.password}</p>}
-            <div className="auth-password-field">
+              {signUpErrors.fullName && <p className="field-error">{signUpErrors.fullName}</p>}
               <input
-                type={showSignUpConfirmPassword ? 'text' : 'password'}
-                name="confirmPassword"
-                placeholder="Confirm Password"
-                value={signUpForm.confirmPassword}
+                type="tel"
+                name="phone"
+                placeholder="Phone Number"
+                value={signUpForm.phone}
                 onChange={onSignUpChange}
               />
-              <button
-                type="button"
-                className="auth-password-toggle"
-                onClick={() => setShowSignUpConfirmPassword((prev) => !prev)}
-                aria-label={
-                  showSignUpConfirmPassword ? 'Hide confirm password' : 'Show confirm password'
-                }
-              >
-                {showSignUpConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+              {signUpErrors.phone && <p className="field-error">{signUpErrors.phone}</p>}
+              <input
+                type="email"
+                name="email"
+                placeholder="Email"
+                value={signUpForm.email}
+                onChange={onSignUpChange}
+              />
+              {signUpErrors.email && <p className="field-error">{signUpErrors.email}</p>}
+              <div className="auth-password-field">
+                <input
+                  type={showSignUpPassword ? 'text' : 'password'}
+                  name="password"
+                  placeholder="Password"
+                  value={signUpForm.password}
+                  onChange={onSignUpChange}
+                />
+                <button
+                  type="button"
+                  className="auth-password-toggle"
+                  onClick={() => setShowSignUpPassword((prev) => !prev)}
+                  aria-label={showSignUpPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showSignUpPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
+              </div>
+              {signUpErrors.password && <p className="field-error">{signUpErrors.password}</p>}
+              <div className="auth-password-field">
+                <input
+                  type={showSignUpConfirmPassword ? 'text' : 'password'}
+                  name="confirmPassword"
+                  placeholder="Confirm Password"
+                  value={signUpForm.confirmPassword}
+                  onChange={onSignUpChange}
+                />
+                <button
+                  type="button"
+                  className="auth-password-toggle"
+                  onClick={() => setShowSignUpConfirmPassword((prev) => !prev)}
+                  aria-label={
+                    showSignUpConfirmPassword ? 'Hide confirm password' : 'Show confirm password'
+                  }
+                >
+                  {showSignUpConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
+              </div>
+              {signUpErrors.confirmPassword && (
+                <p className="field-error">{signUpErrors.confirmPassword}</p>
+              )}
+              <button type="submit" className="auth-btn" disabled={auth.loading}>
+                {auth.loading && isSignUp ? 'Please wait...' : 'SIGN UP'}
               </button>
-            </div>
-            {signUpErrors.confirmPassword && (
-              <p className="field-error">{signUpErrors.confirmPassword}</p>
-            )}
-            <button type="submit" className="auth-btn" disabled={auth.loading}>
-              {auth.loading && isSignUp ? 'Please wait...' : 'SIGN UP'}
-            </button>
-          </form>
+            </form>
+          )}
         </div>
 
         <div className="auth-form-container auth-sign-in">
@@ -327,6 +437,7 @@ const Auth = () => {
                 type="button"
                 className="auth-btn ghost"
                 onClick={() => switchPanel(false)}
+                disabled={showCompanySetup}
               >
                 SIGN IN
               </button>

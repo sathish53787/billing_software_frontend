@@ -1,6 +1,6 @@
 .reports-filters {
   position: relative;
-  z-index: 40;
+  z-index: 5;
   overflow: visible;
   display: flex;
   flex-wrap: wrap;
@@ -13,7 +13,7 @@
 
 .reports-filters .drp {
   position: relative;
-  z-index: 41;
+  z-index: 6;
   width: 240px;
   flex: 0 0 auto;
   margin-right: auto;
@@ -26,6 +26,8 @@
   gap: 0.55rem;
   justify-content: flex-end;
   align-items: end;
+  position: relative;
+  z-index: 1;
 }
 
 .reports-chip-btn,
@@ -128,12 +130,12 @@
 }
 
 .reports-pnl-grid .is-net {
-  background: #0f1218;
-  border-color: #0f1218;
+  background: linear-gradient(145deg, #fff8f1, #f7f8fb);
+  border-color: #ece7e0;
 }
 
 .reports-pnl-grid .is-net span {
-  color: #b8aea0;
+  color: #6b7280;
 }
 
 .reports-pnl-grid .is-net strong {
@@ -141,11 +143,17 @@
   font-size: 1.15rem;
 }
 
-.reports-pnl-grid .is-profit {
+.reports-pnl-grid .reports-pnl-span {
+  grid-column: span 1;
+}
+
+.reports-pnl-grid .is-profit,
+.dash-table .is-profit {
   color: #1fa97a;
 }
 
-.reports-pnl-grid .is-loss {
+.reports-pnl-grid .is-loss,
+.dash-table .is-loss {
   color: #d64545;
 }
 
@@ -167,6 +175,11 @@
   padding: 1.15rem 1.25rem;
 }
 
+.reports-expense-details .dash-table-wrap {
+  max-height: 360px;
+  overflow: auto;
+}
+
 .reports-bills {
   margin-bottom: 0.5rem;
 }
@@ -174,15 +187,19 @@
 @media (max-width: 1100px) {
   .reports-filters {
     justify-content: flex-start;
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .reports-filters .drp {
     margin-right: 0;
-    width: min(240px, 100%);
+    width: 100%;
+    max-width: 320px;
   }
 
   .reports-filter-actions {
     justify-content: flex-start;
+    width: 100%;
   }
 
   .reports-split {
@@ -196,6 +213,17 @@
 
 @media (max-width: 640px) {
   .reports-filters .drp {
+    width: 100%;
+    max-width: none;
+  }
+
+  .reports-filter-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .reports-chip-btn,
+  .reports-apply-btn {
     width: 100%;
   }
 

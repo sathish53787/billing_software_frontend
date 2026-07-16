@@ -1,5 +1,8 @@
 import { call, put, takeLatest } from 'redux-saga/effects';
 import {
+  createCompanyFailure,
+  createCompanyStart,
+  createCompanySuccess,
   loginFailure,
   loginStart,
   loginSuccess,
@@ -7,7 +10,12 @@ import {
   registerStart,
   registerSuccess,
 } from '../Slices/handlers/AuthSlice';
-import { login, persistAuth, register } from '../../Services/apiService';
+import {
+  createCompany,
+  login,
+  persistAuth,
+  register,
+} from '../../Services/apiService';
 
 function* loginSaga(action) {
   try {
@@ -29,10 +37,12 @@ function* registerSaga(action) {
   try {
     const data = yield call(register, action.payload);
     if (data?.success) {
+      persistAuth(data.savedUser);
       yield put(
         registerSuccess({
           message: data?.message || 'Account created successfully',
           email: action.payload?.email || data?.savedUser?.email || null,
+          savedUser: data.savedUser,
         })
       );
     } else {
@@ -47,7 +57,27 @@ function* registerSaga(action) {
   }
 }
 
+function* createCompanySaga(action) {
+  try {
+    const data = yield call(createCompany, action.payload);
+    if (data?.success) {
+      const user = data.userResponse || data.savedUser;
+      persistAuth(user);
+      yield put(createCompanySuccess(user));
+    } else {
+      yield put(createCompanyFailure(data?.message || 'Failed to create company'));
+    }
+  } catch (error) {
+    yield put(
+      createCompanyFailure(
+        error?.response?.data?.message || error.message || 'Failed to create company'
+      )
+    );
+  }
+}
+
 export function* watcherSaga() {
   yield takeLatest(loginStart.type, loginSaga);
   yield takeLatest(registerStart.type, registerSaga);
+  yield takeLatest(createCompanyStart.type, createCompanySaga);
 }

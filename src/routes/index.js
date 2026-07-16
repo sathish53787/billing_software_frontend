@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Outlet, Route, Routes, useParams } from 'react-router-dom';
 import Auth from '../pages/Auth';
 import Billing from '../pages/Billing';
 import Dashboard from '../pages/Dashboard';
@@ -10,24 +10,38 @@ import Reports from '../pages/Reports';
 import ProtectedRoutes from './protectedRoutes';
 import { RoutePathName } from './RoutePathName';
 import { getItem } from '../Services/localService';
+import { getAccessUrl, getDashboardPath } from '../Utils/tenant';
 
-const Routers = () => {
+const TenantRedirect = () => {
   const token = getItem('token');
+  if (!token) return <Navigate to={RoutePathName.AUTH} replace />;
+  const user = getItem('user');
+  if (!user?.is_company && !user?.company) {
+    return <Navigate to={RoutePathName.AUTH} replace />;
+  }
+  return <Navigate to={getDashboardPath(user)} replace />;
+};
 
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <Navigate
-              to={token ? RoutePathName.DASHBOARD : RoutePathName.AUTH}
-              replace
-            />
-          }
-        />
-        <Route path={RoutePathName.AUTH} element={<Auth />} />
-        <Route element={<ProtectedRoutes />}>
+const AccessUrlLayout = () => {
+  const { accessUrl } = useParams();
+  const expected = getAccessUrl();
+  if (!expected) {
+    return <Navigate to={RoutePathName.AUTH} replace />;
+  }
+  if (String(accessUrl || '').toLowerCase() !== expected) {
+    return <Navigate to={getDashboardPath()} replace />;
+  }
+  return <Outlet />;
+};
+
+const Routers = () => (
+  <BrowserRouter>
+    <Routes>
+      <Route path="/" element={<TenantRedirect />} />
+      <Route path={RoutePathName.AUTH} element={<Auth />} />
+      <Route element={<ProtectedRoutes />}>
+        <Route path=":accessUrl" element={<AccessUrlLayout />}>
+          <Route index element={<Navigate to={RoutePathName.DASHBOARD} replace />} />
           <Route path={RoutePathName.DASHBOARD} element={<Dashboard />} />
           <Route path={RoutePathName.FOOD_ITEMS} element={<FoodItems />} />
           <Route path={RoutePathName.BILLING} element={<Billing />} />
@@ -37,17 +51,17 @@ const Routers = () => {
           <Route path={RoutePathName.COMPANY_PROFILE} element={<CompanyProfile />} />
           <Route
             path={RoutePathName.MY_PROFILE}
-            element={<Navigate to={RoutePathName.DASHBOARD} replace />}
+            element={<Navigate to={`../${RoutePathName.DASHBOARD}`} replace />}
           />
           <Route
             path={RoutePathName.HOME}
-            element={<Navigate to={RoutePathName.DASHBOARD} replace />}
+            element={<Navigate to={`../${RoutePathName.DASHBOARD}`} replace />}
           />
         </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
-  );
-};
+      </Route>
+      <Route path="*" element={<TenantRedirect />} />
+    </Routes>
+  </BrowserRouter>
+);
 
 export default Routers;
