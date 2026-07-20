@@ -261,14 +261,7 @@ const Expenses = () => {
           </button>
         </div>
 
-        <form
-          className="expense-filters"
-          onSubmit={(e) => {
-            e.preventDefault();
-            setPage(1);
-            loadExpenses();
-          }}
-        >
+        <div className="expense-filters">
           <DateRangePicker
             id="expenseDateRange"
             label="Select Date"
@@ -294,10 +287,7 @@ const Expenses = () => {
               ))}
             </select>
           </div>
-          <button type="submit" className="expense-add-btn" disabled={loading}>
-            {loading ? 'Searching...' : 'Search'}
-          </button>
-        </form>
+        </div>
 
         <div className="expense-table-wrap">
           {loading ? (

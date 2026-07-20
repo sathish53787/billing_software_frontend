@@ -5,16 +5,32 @@
 }
 
 .expense-kpi-row {
-  margin-bottom: 0.85rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: grid;
+  grid-template-columns: repeat(2, minmax(140px, 180px));
+  gap: 0.55rem;
+  margin-bottom: 0.75rem;
+  justify-content: start;
+}
+
+.expense-kpi.dash-kpi {
+  padding: 0.7rem 0.8rem;
+  border-radius: 12px;
+  border: 1px solid #e8eaef;
+  overflow: hidden;
 }
 
 .expense-kpi .dash-kpi-label {
+  margin: 0;
   font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .expense-kpi .dash-kpi-value {
-  font-size: 1.45rem;
+  margin: 0.35rem 0 0;
+  font-size: 1.35rem;
+  line-height: 1;
 }
 
 .expense-panel {
@@ -132,24 +148,24 @@
 }
 
 .expense-table thead th {
-  padding: 0.5rem 0.75rem;
+  padding: 0.55rem 0.75rem;
   text-align: left;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #7a5a18;
-  background: linear-gradient(105deg, rgba(232, 184, 74, 0.18), rgba(255, 107, 74, 0.1));
-  border-bottom: 1px solid rgba(232, 184, 74, 0.28);
+  color: #4a3b16;
+  background: #ebe4d4;
+  border-bottom: 2px solid #d4a84b;
 }
 
 .expense-table tbody tr {
   animation: dashFadeUp 0.35s ease both;
-  background: #fff;
+  background: #ffffff;
 }
 
 .expense-table tbody tr:nth-child(even) {
-  background: #f7f8fa;
+  background: #f8f9fb;
 }
 
 .expense-table tbody tr:hover {
@@ -173,9 +189,9 @@
   border-radius: 999px;
   font-size: 12px;
   font-weight: 650;
-  color: #7a4a1a;
-  background: rgba(232, 184, 74, 0.16);
-  border: 1px solid rgba(232, 184, 74, 0.28);
+  color: #334155;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
 }
 
 .expense-amount {
@@ -186,6 +202,16 @@
 .expense-actions {
   display: inline-flex;
   gap: 0.35rem;
+}
+
+.expense-table thead th:last-child,
+.expense-table tbody td:last-child {
+  text-align: right;
+}
+
+.expense-table tbody td:last-child .expense-actions {
+  justify-content: flex-end;
+  width: 100%;
 }
 
 .expense-action-btn {
@@ -421,7 +447,7 @@
 
 @media (max-width: 640px) {
   .expense-kpi-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .expense-filters .drp,

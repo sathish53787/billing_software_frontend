@@ -83,7 +83,8 @@ const BillInvoice = ({ bill, company, cashierName }) => {
           <img
             className="bill-invoice-logo"
             src={company.companyLogo}
-            alt=""
+            alt={company?.companyName || 'Company logo'}
+            crossOrigin="anonymous"
           />
         ) : null}
         <h1 className="bill-invoice-brand">

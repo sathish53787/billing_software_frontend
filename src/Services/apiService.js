@@ -75,8 +75,8 @@ export const deleteFoodItem = async (id) => {
   return response.data;
 };
 
-export const getBills = async () => {
-  const response = await axiosApi().get('/bills');
+export const getBills = async (params = {}) => {
+  const response = await axiosApi().get('/bills', { params });
   return response.data;
 };
 
@@ -102,6 +102,16 @@ export const createBill = async (payload) => {
 
 export const getBillById = async (id) => {
   const response = await axiosApi().get(`/bills/${id}`);
+  return response.data;
+};
+
+export const updateBill = async (id, payload) => {
+  const response = await axiosApi().put(`/bills/${id}`, payload);
+  return response.data;
+};
+
+export const deleteBill = async (id) => {
+  const response = await axiosApi().delete(`/bills/${id}`);
   return response.data;
 };
 

@@ -266,12 +266,16 @@ const Orders = () => {
       return;
     }
     try {
-      const data = await getBillById(order.billId);
-      if (!data?.success || !data.bill) {
-        toast.error(data?.message || 'Failed to load bill');
+      const [billData, companyData] = await Promise.all([
+        getBillById(order.billId),
+        getCompany().catch(() => null),
+      ]);
+      if (!billData?.success || !billData.bill) {
+        toast.error(billData?.message || 'Failed to load bill');
         return;
       }
-      setGeneratedBill(data.bill);
+      if (companyData?.success) setCompany(companyData.company || null);
+      setGeneratedBill(billData.bill);
     } catch (error) {
       toast.error(error?.response?.data?.message || error.message || 'Failed to load bill');
     }
@@ -518,6 +522,12 @@ const Orders = () => {
       setCart({});
       setMenuPanelOpen(false);
       setMeta({ ...emptyMeta, orderDate: todayInputValue() });
+      try {
+        const companyData = await getCompany();
+        if (companyData?.success) setCompany(companyData.company || null);
+      } catch {
+        // keep existing company
+      }
       await loadOrders();
       toast.success(data.message || 'Bill generated successfully');
     } catch (error) {
@@ -830,13 +840,7 @@ const Orders = () => {
       ) : null}
 
       <section className="dash-panel orders-drafts">
-        <form
-          className="orders-list-filters"
-          onSubmit={(e) => {
-            e.preventDefault();
-            loadOrders();
-          }}
-        >
+        <div className="orders-list-filters">
           <DateRangePicker
             id="ordersDateRange"
             label="Select Date"
@@ -875,10 +879,7 @@ const Orders = () => {
               <option value="Cancelled">Cancelled</option>
             </select>
           </div>
-          <button type="submit" className="orders-start-btn" disabled={listLoading}>
-            {listLoading ? 'Searching...' : 'Search'}
-          </button>
-        </form>
+        </div>
 
         <div className="orders-table-wrap">
           {listLoading ? (

@@ -227,15 +227,15 @@
   position: sticky;
   top: 0;
   z-index: 1;
-  padding: 0.5rem 0.75rem;
+  padding: 0.55rem 0.75rem;
   text-align: left;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #7a5a18;
-  background: linear-gradient(105deg, rgba(232, 184, 74, 0.18), rgba(255, 107, 74, 0.1));
-  border-bottom: 1px solid rgba(232, 184, 74, 0.28);
+  color: #4a3b16;
+  background: #ebe4d4;
+  border-bottom: 2px solid #d4a84b;
 }
 
 .food-table thead th:first-child {
@@ -406,6 +406,16 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
+}
+
+.food-table thead th:last-child,
+.food-table tbody td:last-child {
+  text-align: right;
+}
+
+.food-table tbody td:last-child .food-actions {
+  justify-content: flex-end;
+  width: 100%;
 }
 
 .food-action-btn {

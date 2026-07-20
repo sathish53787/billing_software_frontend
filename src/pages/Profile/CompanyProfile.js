@@ -5,6 +5,7 @@ import { getCompany, persistAuth, saveCompany } from '../../Services/apiService'
 import { resolveBankFromUpiId } from '../Billing/upiHelpers';
 import AppShell from '../Layout/AppShell';
 import '../Dashboard/Dashboard.css';
+import LogoCropModal from './LogoCropModal';
 import './CompanyProfile.css';
 
 const emptyForm = {
@@ -31,6 +32,8 @@ const CompanyProfile = () => {
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState('');
   const [hasCompany, setHasCompany] = useState(false);
+  const [cropSrc, setCropSrc] = useState('');
+  const [cropOpen, setCropOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -83,8 +86,11 @@ const CompanyProfile = () => {
       if (logoPreview?.startsWith('blob:')) {
         URL.revokeObjectURL(logoPreview);
       }
+      if (cropSrc?.startsWith('blob:')) {
+        URL.revokeObjectURL(cropSrc);
+      }
     };
-  }, [logoPreview]);
+  }, [logoPreview, cropSrc]);
 
   const onChange = (e) => {
     const { name, value } = e.target;
@@ -117,26 +123,46 @@ const CompanyProfile = () => {
     setErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
+  const closeCropModal = () => {
+    if (cropSrc?.startsWith('blob:')) {
+      URL.revokeObjectURL(cropSrc);
+    }
+    setCropSrc('');
+    setCropOpen(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const onPickLogo = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
       toast.error('Please select an image file');
+      e.target.value = '';
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
       toast.error('Logo must be under 5MB');
+      e.target.value = '';
       return;
     }
 
+    if (cropSrc?.startsWith('blob:')) {
+      URL.revokeObjectURL(cropSrc);
+    }
+
+    setCropSrc(URL.createObjectURL(file));
+    setCropOpen(true);
+    setErrors((prev) => ({ ...prev, companyLogo: '' }));
+  };
+
+  const onCropComplete = (file) => {
     if (logoPreview?.startsWith('blob:')) {
       URL.revokeObjectURL(logoPreview);
     }
-
     setLogoFile(file);
     setLogoPreview(URL.createObjectURL(file));
-    setErrors((prev) => ({ ...prev, companyLogo: '' }));
+    closeCropModal();
   };
 
   const validate = () => {
@@ -223,7 +249,7 @@ const CompanyProfile = () => {
               </div>
               <div>
                 <p className="company-logo-title">Company Logo</p>
-                <p className="company-logo-hint">JPG, PNG or WEBP up to 5MB</p>
+                <p className="company-logo-hint">JPG, PNG or WEBP up to 5MB · square crop</p>
                 <button
                   type="button"
                   className="company-upload-btn"
@@ -412,6 +438,13 @@ const CompanyProfile = () => {
           </div>
         </form>
       )}
+
+      <LogoCropModal
+        open={cropOpen}
+        imageSrc={cropSrc}
+        onCancel={closeCropModal}
+        onComplete={onCropComplete}
+      />
     </AppShell>
   );
 };

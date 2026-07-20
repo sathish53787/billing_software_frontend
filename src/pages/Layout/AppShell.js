@@ -66,6 +66,7 @@ const AppShell = ({ title, subtitle, children }) => {
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [user, setUser] = useState(() => getItem('user'));
   const [brandName, setBrandName] = useState(DEFAULT_BRAND);
+  const [brandLogo, setBrandLogo] = useState('');
 
   const displayName = user?.fullName || 'Admin';
   const initials = useMemo(() => getInitials(displayName), [displayName]);
@@ -89,9 +90,14 @@ const AppShell = ({ title, subtitle, children }) => {
         const data = await getCompany();
         if (!active) return;
         const name = String(data?.company?.companyName || '').trim();
+        const logo = String(data?.company?.companyLogo || '').trim();
         setBrandName(name || DEFAULT_BRAND);
+        setBrandLogo(logo);
       } catch {
-        if (active) setBrandName(DEFAULT_BRAND);
+        if (active) {
+          setBrandName(DEFAULT_BRAND);
+          setBrandLogo('');
+        }
       }
     };
 
@@ -144,9 +150,17 @@ const AppShell = ({ title, subtitle, children }) => {
 
       <aside className="dash-sidebar">
         <div className="dash-brand">
-          <div className="dash-brand-mark" aria-hidden>
-            STV
-          </div>
+          {brandLogo ? (
+            <img
+              className="dash-brand-mark is-logo"
+              src={brandLogo}
+              alt=""
+            />
+          ) : (
+            <div className="dash-brand-mark" aria-hidden>
+              STV
+            </div>
+          )}
           <p className="dash-brand-text">{brandName}</p>
         </div>
 
