@@ -93,6 +93,8 @@ const orderLabel = (order) => {
   return order.customerName ? `Delivery — ${order.customerName}` : 'Delivery';
 };
 
+const normalizeTableNumber = (value) => String(value || '').trim().toLowerCase();
+
 const Orders = () => {
   const user = useSelector((state) => state.auth?.user);
   const [orderType, setOrderType] = useState('Dine-In');
@@ -130,6 +132,7 @@ const Orders = () => {
   const [generatedBill, setGeneratedBill] = useState(null);
   const [addOrderOpen, setAddOrderOpen] = useState(false);
   const [menuPanelOpen, setMenuPanelOpen] = useState(false);
+  const [orderFormErrors, setOrderFormErrors] = useState({});
 
   const loadOrders = useCallback(async () => {
     setListLoading(true);
@@ -317,6 +320,22 @@ const Orders = () => {
   const onMetaChange = (e) => {
     const { name, value } = e.target;
     setMeta((prev) => ({ ...prev, [name]: value }));
+    if (name === 'tableNumber' && orderFormErrors.tableNumber) {
+      setOrderFormErrors((prev) => ({ ...prev, tableNumber: '' }));
+    }
+  };
+
+  const findActiveDineInDraft = (tableNumber) => {
+    const normalized = normalizeTableNumber(tableNumber);
+    if (!normalized) return null;
+    return (
+      orders.find(
+        (order) =>
+          order.orderType === 'Dine-In' &&
+          order.status === 'Draft' &&
+          normalizeTableNumber(order.tableNumber) === normalized
+      ) || null
+    );
   };
 
   const beginNewOrderForm = (type = orderType) => {
@@ -330,11 +349,13 @@ const Orders = () => {
   const openAddOrderPopup = () => {
     setOrderType('Dine-In');
     setMeta({ ...emptyMeta, orderDate: todayInputValue() });
+    setOrderFormErrors({});
     setAddOrderOpen(true);
   };
 
   const closeAddOrderPopup = () => {
     setAddOrderOpen(false);
+    setOrderFormErrors({});
   };
 
   const showDraftsOnly = () => {
@@ -344,6 +365,7 @@ const Orders = () => {
 
   const setPopupOrderType = (type) => {
     setOrderType(type);
+    setOrderFormErrors({});
     setMeta((prev) => ({
       ...emptyMeta,
       orderDate: prev.orderDate || todayInputValue(),
@@ -352,6 +374,23 @@ const Orders = () => {
 
   const startOrder = async (e) => {
     e.preventDefault();
+
+    if (orderType === 'Dine-In') {
+      const tableNumber = String(meta.tableNumber || '').trim();
+      if (!tableNumber) {
+        setOrderFormErrors({ tableNumber: 'Table number is required' });
+        return;
+      }
+      const activeDraft = findActiveDineInDraft(tableNumber);
+      if (activeDraft) {
+        const message = `Table ${tableNumber} already has an active dine-in order (${activeDraft.orderNo}). Bill or cancel it before starting a new one.`;
+        setOrderFormErrors({ tableNumber: message });
+        toast.error(`Table ${tableNumber} is already in use`);
+        return;
+      }
+    }
+
+    setOrderFormErrors({});
     setStarting(true);
     try {
       const payload = {
@@ -369,16 +408,15 @@ const Orders = () => {
       const data = await createOrder(payload);
       if (!data?.success) {
         toast.error(data?.message || 'Failed to start order');
+        if (orderType === 'Dine-In' && data?.message) {
+          setOrderFormErrors({ tableNumber: data.message });
+        }
         return;
       }
       openDraft(data.order);
       setAddOrderOpen(false);
       await loadOrders();
-      toast.success(
-        data.resumed
-          ? 'Opened existing draft for this table'
-          : `${orderType} draft created — add food items`
-      );
+      toast.success(`${orderType} draft created — add food items`);
     } catch (error) {
       toast.error(error?.response?.data?.message || error.message || 'Failed to start order');
     } finally {
@@ -706,6 +744,7 @@ const Orders = () => {
                       onChange={onMetaChange}
                       placeholder="e.g. 7"
                       required
+                      className={orderFormErrors.tableNumber ? 'is-invalid' : ''}
                     />
                   </div>
                   <div className="orders-field">
@@ -720,7 +759,12 @@ const Orders = () => {
                       placeholder="0"
                     />
                   </div>
-                  <div className="orders-field">
+                  {orderFormErrors.tableNumber ? (
+                    <div className="orders-field orders-field-wide orders-field-error-wrap" role="alert">
+                      <span className="orders-field-error">{orderFormErrors.tableNumber}</span>
+                    </div>
+                  ) : null}
+                  <div className="orders-field orders-field-wide">
                     <label htmlFor="captain">Captain (Optional)</label>
                     <input
                       id="captain"
