@@ -75,6 +75,11 @@ export const deleteFoodItem = async (id) => {
   return response.data;
 };
 
+export const reorderFoodItems = async (orderedIds) => {
+  const response = await axiosApi().put('/food-items/reorder', { orderedIds });
+  return response.data;
+};
+
 export const getBills = async (params = {}) => {
   const response = await axiosApi().get('/bills', { params });
   return response.data;

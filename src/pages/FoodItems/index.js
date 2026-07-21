@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { FiChevronDown, FiEdit2, FiPlus, FiSearch, FiTrash2, FiX } from 'react-icons/fi';
+import { FiChevronDown, FiEdit2, FiMenu, FiPlus, FiSearch, FiTrash2, FiX } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import {
   createFoodItem,
   deleteFoodItem,
   getFoodItems,
+  reorderFoodItems,
   updateFoodItem,
 } from '../../Services/apiService';
 import AppShell from '../Layout/AppShell';
@@ -63,6 +64,19 @@ const FoodItems = () => {
   const [deleting, setDeleting] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
+  const [draggingId, setDraggingId] = useState(null);
+  const [dropTargetId, setDropTargetId] = useState(null);
+  const [reordering, setReordering] = useState(false);
+
+  const hasActiveFilters = useMemo(
+    () =>
+      Boolean(
+        filters.search.trim() || filters.type || filters.category || filters.available
+      ),
+    [filters]
+  );
+
+  const canReorder = !hasActiveFilters && !loading && !reordering;
 
   const filteredItems = useMemo(() => {
     const search = filters.search.trim().toLowerCase();
@@ -103,6 +117,71 @@ const FoodItems = () => {
   useEffect(() => {
     loadItems();
   }, []);
+
+  const moveItem = (fromId, toId) => {
+    if (!fromId || !toId || fromId === toId) return null;
+    const fromIndex = items.findIndex((item) => item._id === fromId);
+    const toIndex = items.findIndex((item) => item._id === toId);
+    if (fromIndex < 0 || toIndex < 0) return null;
+
+    const next = [...items];
+    const [moved] = next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, moved);
+    return next;
+  };
+
+  const persistReorder = async (nextItems) => {
+    const previousItems = items;
+    setItems(nextItems);
+    setReordering(true);
+    try {
+      const data = await reorderFoodItems(nextItems.map((item) => item._id));
+      if (!data?.success) {
+        setItems(previousItems);
+        toast.error(data?.message || 'Failed to reorder food items');
+        return;
+      }
+      setItems(data.items || nextItems);
+      setStats(data.stats || emptyStats);
+    } catch (error) {
+      setItems(previousItems);
+      toast.error(
+        error?.response?.data?.message || error.message || 'Failed to reorder food items'
+      );
+    } finally {
+      setReordering(false);
+      setDraggingId(null);
+      setDropTargetId(null);
+    }
+  };
+
+  const onDragStart = (e, itemId) => {
+    if (!canReorder) return;
+    setDraggingId(itemId);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', itemId);
+  };
+
+  const onDragOverRow = (e, itemId) => {
+    if (!canReorder || !draggingId || draggingId === itemId) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDropTargetId(itemId);
+  };
+
+  const onDropRow = async (e, itemId) => {
+    if (!canReorder) return;
+    e.preventDefault();
+    const fromId = draggingId || e.dataTransfer.getData('text/plain');
+    const nextItems = moveItem(fromId, itemId);
+    if (!nextItems) return;
+    await persistReorder(nextItems);
+  };
+
+  const onDragEnd = () => {
+    setDraggingId(null);
+    setDropTargetId(null);
+  };
 
   useEffect(() => {
     if (!modalOpen && !deleteTarget) return undefined;
@@ -347,6 +426,12 @@ const FoodItems = () => {
           </button>
         </div>
 
+        {hasActiveFilters ? (
+          <p className="food-reorder-hint">Clear filters to drag and reorder menu items.</p>
+        ) : (
+          <p className="food-reorder-hint">Drag the handle to reorder menu items.</p>
+        )}
+
         <div className="food-table-wrap">
           {loading ? (
             <p className="food-empty">Loading food items...</p>
@@ -360,6 +445,7 @@ const FoodItems = () => {
             <table className="food-table">
               <thead>
                 <tr>
+                  <th className="food-reorder-col" aria-label="Reorder" />
                   <th>Item Name</th>
                   <th>Category</th>
                   <th>Type</th>
@@ -373,12 +459,34 @@ const FoodItems = () => {
                 {filteredItems.map((item, index) => (
                   <tr
                     key={item._id}
-                    className={selectedId === item._id ? 'is-selected' : ''}
+                    className={`${selectedId === item._id ? 'is-selected' : ''}${
+                      draggingId === item._id ? ' is-dragging' : ''
+                    }${dropTargetId === item._id ? ' is-drop-target' : ''}`}
                     style={{ animationDelay: `${index * 0.04}s` }}
                     onClick={() =>
                       setSelectedId((prev) => (prev === item._id ? null : item._id))
                     }
+                    onDragOver={(e) => onDragOverRow(e, item._id)}
+                    onDrop={(e) => onDropRow(e, item._id)}
+                    onDragLeave={() => {
+                      if (dropTargetId === item._id) setDropTargetId(null);
+                    }}
                   >
+                    <td className="food-reorder-col">
+                      <button
+                        type="button"
+                        className={`food-drag-handle${canReorder ? '' : ' is-disabled'}`}
+                        title={canReorder ? 'Drag to reorder' : 'Clear filters to reorder'}
+                        aria-label={`Reorder ${item.itemName}`}
+                        draggable={canReorder}
+                        disabled={!canReorder}
+                        onDragStart={(e) => onDragStart(e, item._id)}
+                        onDragEnd={onDragEnd}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <FiMenu />
+                      </button>
+                    </td>
                     <td>
                       <span className="food-item-name">{item.itemName}</span>
                     </td>
